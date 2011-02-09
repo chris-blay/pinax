@@ -5,6 +5,7 @@
 {% load i18n %}
 {% load account_tags %}
 {% load shorttimesince_tag %}
+{% load shorttimeuntil_tag %}
 {% load order_by %}
 {% load humanize %}
 {% load tasks_tags %}
@@ -36,6 +37,8 @@
     
     <p>Group by:
         {% ifequal group_by "state" %}
+            <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=due">due</a>
+            or
             <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=modified">last modified</a>
             or
             <b>state</b>
@@ -48,6 +51,8 @@
             {% regroup tasks by get_state_display as grouped_tasks %}
         {% else %}
             {% ifequal group_by "assignee" %}
+                <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=due">due</a>
+                or
                 <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=modified">last modified</a>
                 or
                 <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=state">state</a>
@@ -60,6 +65,8 @@
                 {% regroup tasks by assignee as grouped_tasks %}
             {% else %}
                 {% ifequal group_by "tag" %}
+                    <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=due">due</a>
+                    or
                     <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=modified">last modified</a>
                     or
                     <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=state">state</a>
@@ -69,16 +76,33 @@
                     <b>tag</b>
                     {# do no manipulation here as we'll special case below #}
                 {% else %}
-                    <b>last modified</b>
-                    or
-                    <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=state">state</a>
-                    or
-                    <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=assignee">assignee</a>
-                    or
-                    <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=tag">tag</a>
-                    
-                    {% order tasks by -modified %}
-                    {% regroup tasks by modified.date as grouped_tasks %}
+                    {% ifequal group_by "modified" %}
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=due">due</a>
+                        or
+                        <b>last modified</b>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=state">state</a>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=assignee">assignee</a>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=tag">tag</a>
+                        
+                        {% order tasks by -modified %}
+                        {% regroup tasks by modified.date as grouped_tasks %}
+                    {% else %}
+                        <b>due</b>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=modified">last modified</a>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=state">state</a>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=assignee">assignee</a>
+                        or
+                        <a href="?{% if gbqs %}{{ gbqs }}&{% endif %}group_by=tag">tag</a>
+                        
+                        {% order tasks by -due %}
+                        {% regroup tasks by due.date as grouped_tasks %}
+                    {% endifequal %}
                 {% endifequal %}
             {% endifequal %}
         {% endifequal %}
@@ -91,6 +115,7 @@
             <th>Summary</th>
             <th>Last Modified</th>
             <th>Assignee</th>
+            <th>Due</th>
             <th>Status</th>
         </tr>
         {% ifequal group_by "tag" %}
@@ -99,7 +124,7 @@
                 {% tasks_for_tag section as tagtasks in tasks %}
                 {% if tagtasks %}
                 <tbody><tr class="task_grouping">
-                    <td colspan="5">
+                    <td colspan="6">
                         <span class="toggle">
                             <span class="arrow">&#x25BE;</span>
                             {{ section }}
@@ -120,6 +145,17 @@
                                     <span class="warning">unassigned</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                {% if item.overdue %}
+                                    <span class="warning">{{ item.due|shorttimesince }} ago</span>
+                                {% else %}
+                                    {% if item.almost %}
+                                        <span class="warning">in {{ item.due|shorttimeuntil }}</span>
+                                    {% else %}
+                                        in {{ item.due|shorttimeuntil }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td>{{ item.status }}</td>
                         </tr>
                     {% endfor %}
@@ -129,7 +165,7 @@
         {% else %}
             {% for section in grouped_tasks %}
                 <tbody><tr class="task_grouping">
-                    <td colspan="5">
+                    <td colspan="6">
                         <span class="toggle">
                             <span class="arrow">&#x25BE;</span>
                             {% ifequal group_by "state" %}
@@ -156,6 +192,17 @@
                                     {% user_display task.assignee %}
                                 {% else %}
                                     <span class="warning">unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.overdue %}
+                                    <span class="warning">{{ task.due|shorttimesince }} ago</span>
+                                {% else %}
+                                    {% if task.almostdue %}
+                                        <span class="warning">in {{ task.due|shorttimeuntil }}</span>
+                                    {% else %}
+                                        in {{ task.due|shorttimeuntil }}
+                                    {% endif %}
                                 {% endif %}
                             </td>
                             <td>{{ task.status }}</td>

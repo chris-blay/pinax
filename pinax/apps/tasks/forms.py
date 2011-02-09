@@ -8,7 +8,7 @@ from django.utils.translation import ugettext
 
 from django.contrib.auth.models import User
 
-from pinax.apps.tasks.models import Task, TaskHistory, workflow
+from pinax.apps.tasks.models import Milestone, Task, TaskHistory, workflow
 from pinax.apps.tasks.widgets import ReadOnlyWidget
 
 from pinax.apps.tagging_utils.widgets import TagAutoCompleteInput
@@ -37,12 +37,26 @@ class TaskForm(forms.ModelForm):
         else:
             assignee_queryset = self.fields["assignee"].queryset
         
+        if group:
+            milestone_queryset = group.content_objects(Milestone)
+        else:
+            milestone_queryset = Milestone.objects.filter(object_id=None)
+        
         self.fields["assignee"].queryset = assignee_queryset.order_by("username")
         self.fields["summary"].widget.attrs["size"] = 65
+        self.fields["milestone"].queryset = milestone_queryset.order_by("summary")
     
     class Meta:
         model = Task
-        fields = ["summary", "detail", "assignee", "tags", "markup"]
+        fields = [
+            "summary",
+            "detail",
+            "assignee",
+            "due",
+            "milestone",
+            "tags",
+            "markup",
+        ]
     
     def clean(self):
         self.check_group_membership()
@@ -87,6 +101,8 @@ class EditTaskForm(forms.ModelForm):
             "tags",
             "status",
             "assignee",
+            "due",
+            "milestone",
             "state",
             "resolution",
         ]
@@ -108,6 +124,8 @@ class EditTaskForm(forms.ModelForm):
             "detail",
             "status",
             "assignee",
+            "due",
+            "milestone",
             "state",
             "tags",
             "resolution"
@@ -120,3 +138,73 @@ class EditTaskForm(forms.ModelForm):
                     ugettext("You must provide a resolution to mark this task as resolved")
                 )
         return self.cleaned_data["resolution"]
+
+
+class MilestoneForm(forms.ModelForm):
+    """
+    Form for creating milestones
+    """
+    
+    tags = TagField(
+        required = False,
+        widget = TagAutoCompleteInput(app_label="tasks", model="milestone")
+    )
+    
+    def __init__(self, user, group, *args, **kwargs):
+        self.user = user
+        self.group = group
+        
+        super(MilestoneForm, self).__init__(*args, **kwargs)
+        
+        self.fields["summary"].widget.attrs["size"] = 65
+    
+    class Meta:
+        model = Milestone
+        fields = ["summary", "due"]
+    
+    def clean(self):
+        self.check_group_membership()
+        return self.cleaned_data
+    
+    def check_group_membership(self):
+        group = self.group
+        if group and not self.group.user_is_member(self.user):
+            raise forms.ValidationError(
+                "You must be a member to create milestones"
+            )
+
+
+class EditMilestoneForm(forms.ModelForm):
+    """
+    Form for editing milestones
+    """
+    
+    status = forms.CharField(
+        required = False,
+        widget = forms.TextInput(attrs={"size": "50", "maxlength": "100"})
+    )
+    tags = TagField(
+        required = False,
+        widget = TagAutoCompleteInput(app_label="tasks", model="milestone")
+    )
+    
+    def __init__(self, user, group, *args, **kwargs):
+        self.user = user
+        self.group = group
+        
+        super(EditMilestoneForm, self).__init__(*args, **kwargs)
+        
+        self.fields["summary"].widget.attrs["size"] = 65
+        self.fields.keyOrder = [
+            "summary",
+            "due",
+            "tags",
+        ]
+    
+    class Meta(TaskForm.Meta):
+        fields = [
+            "summary",
+            "due",
+            "tags",
+        ]
+

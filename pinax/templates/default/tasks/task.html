@@ -70,6 +70,8 @@
                 $('#id_resolution').attr("disabled", false);
             }
         }
+        
+        $('#id_due').datepicker();
     });
     
     $('#id_state').change(function(){
@@ -87,6 +89,5 @@
     $('#nudge-history').click(function() {
         $('#nudge-history-target').toggle();
     });
-
 </script>
 {% endblock %}

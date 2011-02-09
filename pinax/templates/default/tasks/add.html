@@ -38,6 +38,8 @@
                 $('#id_search').val('');
             });
             $('#id_assignee').after(' <a href="#" onclick="$(\'#id_assignee\').val({{ user.id }}); return false;">{% trans "assign to me" %}</a>');
+            $('#id_due').datepicker();
+            $('#id_milestone').after(' <a href="{% groupurl milestone_add group %}">{% trans "add milestone" %}</a>');
             $('#id_summary').focus();
         });
     </script>

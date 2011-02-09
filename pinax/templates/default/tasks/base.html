@@ -8,6 +8,8 @@
 {% block subnav %}
     {% if user.is_authenticated %}
         <ul>
+            <li><a href="{% groupurl milestone_add group %}">{% trans "Add Milestone" %}</a></li>
+            <li><a href="{% groupurl milestone_list group %}">{% trans "All Milestones" %}</a></li>
             <li><a href="{% groupurl task_add group %}">{% trans "Add Task" %}</a></li>
             <li><a href="{% groupurl tasks_for_user group username=user.username %}">{% trans "Your Tasks" %}</a></li>
             <li><a href="{% groupurl task_list group %}">{% trans "All Tasks" %}</a></li>

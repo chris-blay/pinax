@@ -28,6 +28,16 @@ def show_task(context, task, nudge):
     }
 
 
+@register.inclusion_tag("tasks/milestone_item.html", takes_context=True)
+def show_milestone(context, milestone):
+    return {
+        "milestone": milestone,
+        "MEDIA_URL": settings.MEDIA_URL,
+        "STATIC_URL": settings.STATIC_URL,
+        "group": context["group"],
+    }
+
+
 @register.simple_tag
 def focus_url(field, value, group=None):
     if field is None:

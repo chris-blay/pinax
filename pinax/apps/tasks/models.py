@@ -30,6 +30,40 @@ workflow = import_module(getattr(settings, "TASKS_WORKFLOW_MODULE", "pinax.apps.
 
 
 
+class Milestone(models.Model):
+    """
+    a group of tasks that constitue a particular goal
+    """
+    
+    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    group = generic.GenericForeignKey("content_type", "object_id")
+    
+    summary = models.CharField(_("summary"), max_length=100)
+    due = models.DateTimeField(_("due"), default=None, null=True, blank=True)
+    
+    tags = TagField()
+    
+    def __unicode__(self):
+        return self.summary
+    
+    def status(self):
+        return '=^_^='
+    
+    def detail(self):
+        return "d'_'b"
+    
+    def overdue(self):
+        # TODO need to check for tz info in this.due
+        return self.due < datetime.now()
+    
+    def almostdue(self):
+        # TODO need to check for tz info in this.due
+        delta = self.due - datetime.now()
+        # TODO move this to a setting
+        return delta.days < 1
+
+
 class Task(models.Model):
     """
     a task to be performed.
@@ -52,6 +86,8 @@ class Task(models.Model):
     )
     created = models.DateTimeField(_("created"), default=datetime.now)
     modified = models.DateTimeField(_("modified"), default=datetime.now) # task modified when commented on or when various fields changed
+    due = models.DateTimeField(_("due"), default=None, null=True, blank=True)
+    milestone = models.ForeignKey(Milestone, verbose_name=_("milestone"), null=True, blank=True)
     assignee = models.ForeignKey(User,
         related_name = "assigned_tasks",
         verbose_name = _("assignee"),
@@ -108,6 +144,16 @@ class Task(models.Model):
         # we remove all nudges for this Task
         for nudge in Nudge.objects.filter(task__exact=self):
             nudge.delete()
+    
+    def overdue(self):
+        # TODO need to check for tz info in this.due
+        return self.due < datetime.now()
+    
+    def almostdue(self):
+        # TODO need to check for tz info in this.due
+        delta = self.due - datetime.now()
+        # TODO move this to a setting
+        return delta.days < 1
     
     def save_history(self, comment_instance=None, change_owner=None):
         """

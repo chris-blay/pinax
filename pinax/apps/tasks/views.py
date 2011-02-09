@@ -32,8 +32,8 @@ else:
 from tagging.models import Tag
 
 from pinax.apps.tasks.filters import TaskFilter
-from pinax.apps.tasks.forms import TaskForm, EditTaskForm
-from pinax.apps.tasks.models import Task, TaskHistory, Nudge
+from pinax.apps.tasks.forms import TaskForm, EditTaskForm, MilestoneForm, EditMilestoneForm
+from pinax.apps.tasks.models import Task, TaskHistory, Milestone, Nudge
 
 
 
@@ -113,6 +113,30 @@ def tasks(request, template_name="tasks/task_list.html"):
     return render_to_response(template_name, RequestContext(request, ctx))
 
 
+def milestones(request, template_name="tasks/milestone_list.html"):
+    
+    group, bridge = group_and_bridge(request)
+    if group:
+        is_member = group.request.user_is_member()
+    else:
+        is_member = True
+    
+    if group:
+        milestones = group.content_objects(Milestone)
+    else:
+        milestones = Milestone.objects.filter(object_id=None)
+    
+    
+    ctx = group_context(group, bridge)
+    ctx.update({
+        "is_member": is_member,
+        "milestones": milestones,
+        "querystring": request.GET.urlencode(),
+    })
+    
+    return render_to_response(template_name, RequestContext(request, ctx))
+
+
 def add_task(request, secret_id=None, form_class=TaskForm, template_name="tasks/add.html"):
     
     group, bridge = group_and_bridge(request)
@@ -182,6 +206,55 @@ def add_task(request, secret_id=None, form_class=TaskForm, template_name="tasks/
     return render_to_response(template_name, RequestContext(request, ctx))
 
 
+def add_milestone(request, form_class=MilestoneForm, template_name="tasks/add_milestone.html"):
+    
+    group, bridge = group_and_bridge(request)
+    if group:
+        is_member = group.request.user_is_member()
+    else:
+        is_member = True
+    
+    if request.method == "POST":
+        if request.user.is_authenticated():
+            milestone_form = form_class(request.user, group, request.POST)
+            if milestone_form.is_valid():
+                milestone = milestone_form.save(commit=False)
+                milestone.creator = request.user
+                milestone.group = group
+                milestone.save()
+                messages.add_message(request, messages.SUCCESS,
+                    ugettext("added milestone '%s'") % milestone.summary
+                )
+                if notification:
+                    if group:
+                        notify_list = group.member_queryset()
+                    else:
+                        notify_list = User.objects.all() # @@@
+                    notify_list = notify_list.exclude(id__exact=request.user.id)
+                    notification.send(notify_list, "tasks_new", {"creator": request.user, "task": task, "group": group})
+                if request.POST.has_key("add-another-milestone"):
+                    if group:
+                        redirect_to = bridge.reverse("milestone_add", group)
+                    else:
+                        redirect_to = reverse("milestone_add")
+                    return HttpResponseRedirect(redirect_to)
+                if group:
+                    redirect_to = bridge.reverse("milestone_list", group)
+                else:
+                    redirect_to = reverse("milestone_list")
+                return HttpResponseRedirect(redirect_to)
+    else:
+        milestone_form = form_class(request.user, group, initial={})
+    
+    ctx = group_context(group, bridge)
+    ctx.update({
+        "is_member": is_member,
+        "milestone_form": milestone_form,
+    })
+    
+    return render_to_response(template_name, RequestContext(request, ctx))
+
+
 @login_required
 def nudge(request, id):
     """
@@ -229,6 +302,59 @@ def nudge(request, id):
         notification.send(notify_list, "tasks_nudge", {"nudger": request.user, "task": task, "count": count})
     
     return HttpResponseRedirect(task_url)
+
+
+def milestone(request, id, template_name="tasks/milestone.html"):
+    
+    group, bridge = group_and_bridge(request)
+    if group:
+        is_member = group.request.user_is_member()
+    else:
+        is_member = True
+    
+    if group:
+        milestones = group.content_objects(Milestone)
+    else:
+        milestones = Milestone.objects.filter(object_id=None)
+    
+    milestone = get_object_or_404(milestones, id=id)
+    
+    if group:
+        notify_list = group.member_queryset()
+    else:
+        notify_list = User.objects.all()
+    notify_list = notify_list.exclude(id__exact=request.user.id)
+    
+    if not request.user.is_authenticated():
+        is_member = False
+    else:
+        if group:
+            is_member = group.user_is_member(request.user)
+        else:
+            is_member = True
+    
+    if is_member and request.method == "POST":
+        form = EditMilestoneForm(request.user, group, request.POST, instance=milestone)
+        if form.is_valid():
+            milestone = form.save()
+            if "tags" in form.changed_data:
+                messages.add_message(request, messages.SUCCESS,
+                    ugettext("updated tags on the milestone")
+                )
+                if notification:
+                    notification.send(notify_list, "tasks_milestone_tags", {"user": request.user, "milestone": milestone, "group": group})
+            form = EditMilestoneForm(request.user, group, instance=milestone)
+    else:
+        form = EditMilestoneForm(request.user, group, instance=milestone)
+    
+    ctx = group_context(group, bridge)
+    ctx.update({
+        "milestone": milestone,
+        "is_member": is_member,
+        "form": form,
+    })
+    
+    return render_to_response(template_name, RequestContext(request, ctx))
 
 
 def task(request, id, template_name="tasks/task.html"):
@@ -475,6 +601,14 @@ def focus(request, field, value, template_name="tasks/focus.html"):
             year, month, day = value.split("-")
             # have to int month and day in case zero-padded
             tasks = tasks.filter(modified__year=int(year), modified__month=int(month), modified__day=int(day))
+        except:
+            tasks = Task.objects.none() # @@@ or throw 404?
+    elif field == "due":
+        try:
+            # @@@ this also seems hackish and brittle
+            year, month, day= value.split("-")
+            # have to int month and day in case zero-padded
+            tasks = tasks.filter(due__year=int(year), due__month=int(month), due__day=int(day))
         except:
             tasks = Task.objects.none() # @@@ or throw 404?
     elif field == "state":
