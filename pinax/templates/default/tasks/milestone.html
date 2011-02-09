@@ -1,0 +1,42 @@
+{% extends "tasks/base.html" %}
+
+{% load i18n %}
+{% load account_tags %}
+{% load tasks_tags %}
+{% load comments_tag %}
+{% load uni_form_tags %}
+{% load attachments_tags %}
+{% load group_tags %}
+{% load theme_tags %}
+
+{% block head_title %}{{ milestone.summary }}{% endblock %}
+
+{% block body %}
+    {#<p><a href="{% url project_milestones milestone.project.slug %}">&larr; {% trans "Back to Milestone List for Project " %} {{ milestone.project }}</a></p>#}
+    
+    <p><a href="{% groupurl milestone_list group %}">&larr; {% trans "Back to Milestone List" %}</a></p>
+    
+    {% show_milestone milestone %}
+    
+    {% if is_member %}
+        <h2>{% trans "Edit" %}</h2>
+        <form method="POST" action="" id="task_form" class="uniForm">
+            {% csrf_token %}
+            {{ form.media }}
+            {{ form|as_uni_form }}
+            
+            <div class="form_block">
+                <input type="submit" value="{% trans "Update Milestone" %}" />
+            </div>
+            
+        </form>
+    {% endif %}
+{% endblock %}
+
+{% block extra_body %}
+<script type="text/javascript">
+    $().ready(function() {
+        $('#id_due').datepicker();
+    });
+</script>
+{% endblock %}

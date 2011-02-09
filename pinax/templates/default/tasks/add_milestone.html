@@ -1,0 +1,40 @@
+{% extends "tasks/base.html" %}
+
+{% load i18n %}
+{% load uni_form_tags %}
+{% load group_tags %}
+
+{% block head_title %}Add Milestone{% endblock %}
+
+{% block body %}
+    <h1>Add Milestone</h1>
+
+    {% if is_member %}
+
+         <div class="main-form">
+            <form method="POST" action="" id="milestone_form" class="uniForm">
+                {% csrf_token %}
+                <div class="form_block">
+                    {{ milestone_form.media }}
+                    {{ milestone_form|as_uni_form }}
+                    <input type="submit" value="{% trans 'Add milestone' %}"/>
+                    <input type="submit" name="add-another-milestone" value="{% trans 'Add milestone and add another' %}"/>
+                </div>
+            </form>
+        </div>
+
+
+    {% else %}
+        <p>{% trans 'You are not a member and so cannot add a milestone.' %}</p>
+    {% endif %}
+
+{% endblock %}
+
+{% block extra_body %}
+    <script type="text/javascript">
+        $().ready(function() {
+            $('#id_due').datepicker();
+            $('#id_summary').focus();
+        });
+    </script>
+{% endblock %}

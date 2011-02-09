@@ -1,0 +1,8 @@
+{% load i18n %}{% load account_tags %}
+{% user_display user as user_display %}
+{% url profile_detail username=user.username as user_url %}
+{% if group %}
+{% blocktrans with milestone.get_absolute_url as milestone_url and group.get_absolute_url as group_url and milestone.tags as milestone_tags %}<a href="{{ user_url }}">{{ user_display }}</a> has updated the tags of milestone '<a href="{{ milestone_url }}">{{ milestone }}</a>' in '<a href="{{ group_url }}">{{ group }}</a>' to '{{ milestone_tags }}'.{% endblocktrans %}
+{% else %}
+{% blocktrans with milestone.get_absolute_url as milestone_url and milestone.tags as milestone_tags %}<a href="{{ user_url }}">{{ user_display }}</a> has updated the tags of milestone '<a href="{{ milestone_url }}">{{ milestone }}</a>' to '{{ milestone_tags }}'.{% endblocktrans %}
+{% endif %}

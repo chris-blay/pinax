@@ -1,0 +1,49 @@
+{% extends "tasks/base.html" %}
+
+{% load i18n %}
+{% load account_tags %}
+{% load shorttimesince_tag %}
+{% load shorttimeuntil_tag %}
+{% load order_by %}
+{% load humanize %}
+{% load tasks_tags %}
+{% load tagging_tags %}
+{% load group_tags %}
+
+{#}{% block head_title %}Milestones for {{ project.name }}{% endblock %}#}
+{% block head_title %}Milestones{% endblock %}
+
+{% block body %}
+    {#<h1>{% trans "Milestones for Project" %} <a href="@@@">{{ group.name }}</a></h1> #}
+    <h1>Milestones</h1>
+    
+    <table class="task_list">{# using the task_list styles here too #}
+        <tr>
+            <th>ID</th>
+            <th>Summary</th>
+            <th>Due</th>
+            <th>Tags</th>
+            <th>Progress</th>
+        </tr>
+        {% for milestone in milestones %}
+            <tr class="milestone_{{ milestone.get_state_display }} {% cycle odd,even %}">
+                <td>{{ milestone.id }}</td>
+                <td><a href="{% groupurl milestone_detail group id=milestone.id %}">{{ milestone.summary }}</a></td>
+                <td>
+                    {% if milestone.overdue %}
+                        <span class="warning">{{ milestone.due|shorttimesince }} ago</span>
+                    {% else %}
+                        {% if milestone.almostdue %}
+                            <span class="warning">in {{ milestone.due|shorttimeuntil }}</span>
+                        {% else %}
+                            {{ milestone.due|shorttimeuntil }}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>{% task_tags milestone group %}</td>
+                <td>{{ milestone.status }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    
+{% endblock %}

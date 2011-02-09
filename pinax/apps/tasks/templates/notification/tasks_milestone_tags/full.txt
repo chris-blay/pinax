@@ -1,0 +1,15 @@
+{% load i18n %}{% load account_tags %}
+{% user_display user as user_display %}
+{% if group %}
+{% blocktrans with milestone.tags as milestone_tags %}{{ user_display }} has updated the tags of milestone '{{ milestone }}' in '{{ group }}' to '{{ milestone_tags }}'.{% endblocktrans %}
+{% else %}
+{% blocktrans with milestone.tags as milestone_tags %}{{ user_display }} has updated the tags of milestone '{{ milestone }}' to '{{ milestone_tags }}'.{% endblocktrans %}
+{% endif %}
+
+
+Milestone details:
+{{ milestone.detail }}
+
+{% blocktrans with milestone.tags as milestone_tags %}Tags: {{ milestone_tags }}{% endblocktrans %}
+
+Link: http://{{ current_site }}{{ milestone.get_absolute_url }}
