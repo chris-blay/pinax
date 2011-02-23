@@ -50,7 +50,7 @@ class Milestone(models.Model):
     def status(self):
         tasks = Task.objects.filter(milestone=self.id)
         finished = [task for task in tasks if task.state in ("2", "3")]
-        return "%d of %d finished" % (len(finished), len(tasks))
+        return "%d of %d" % (len(finished), len(tasks))
     
     def detail(self):
         return "d'_'b"
