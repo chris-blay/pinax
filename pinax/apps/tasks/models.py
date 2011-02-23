@@ -46,9 +46,12 @@ class Milestone(models.Model):
         return self.summary
     
     def progress(self):
-        tasks = Task.objects.filter(milestone=self.id)
+        tasks = self.tasks()
         finished = [task for task in tasks if task.state in ("2", "3")]
         return _("%d of %d") % (len(finished), len(tasks))
+    
+    def tasks(self):
+        return Task.objects.filter(milestone=self.id)
     
     def overdue(self):
         # TODO need to check for tz info in this.due

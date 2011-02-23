@@ -337,12 +337,6 @@ def milestone(request, id, template_name="tasks/milestone.html"):
         form = EditMilestoneForm(request.user, group, request.POST, instance=milestone)
         if form.is_valid():
             milestone = form.save()
-            if "tags" in form.changed_data:
-                messages.add_message(request, messages.SUCCESS,
-                    ugettext("updated tags on the milestone")
-                )
-                if notification:
-                    notification.send(notify_list, "tasks_milestone_tags", {"user": request.user, "milestone": milestone, "group": group})
             form = EditMilestoneForm(request.user, group, instance=milestone)
     else:
         form = EditMilestoneForm(request.user, group, instance=milestone)

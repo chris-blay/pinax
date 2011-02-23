@@ -16,5 +16,10 @@
     </div>
     <div class="bulk">
         <h2>#{{ milestone.id }}: <a href="{{ milestone.get_absolute_url }}">{{ milestone.summary }}</a></h2>
+        <ul>
+        {% for task in milestone.tasks %}
+            <li><a href="{{ task.get_absolute_url }}">{{ task.summary }} - {{ task.created|date}} </a></li>
+        {% endfor %}
+        </ul>
     </div>
 </div>
