@@ -42,18 +42,13 @@ class Milestone(models.Model):
     summary = models.CharField(_("summary"), max_length=100)
     due = models.DateTimeField(_("due"), default=None, null=True, blank=True)
     
-    tags = TagField()
-    
     def __unicode__(self):
         return self.summary
     
-    def status(self):
+    def progress(self):
         tasks = Task.objects.filter(milestone=self.id)
         finished = [task for task in tasks if task.state in ("2", "3")]
-        return "%d of %d" % (len(finished), len(tasks))
-    
-    def detail(self):
-        return "d'_'b"
+        return _("%d of %d") % (len(finished), len(tasks))
     
     def overdue(self):
         # TODO need to check for tz info in this.due

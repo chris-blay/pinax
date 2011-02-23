@@ -11,11 +11,10 @@
 
 <div class="task clearfix">
     <div class="task-meta">
-        <div><b>{% trans "Created" %}</b>: {{ task.created|date }}</div>
-        <div><b>{% trans "Modified" %}</b>: {{ task.modified|shorttimesince }} ago</div>
+        <div><b>{% trans "Due" %}</b>: {{ milestone.due|date }}</div>
+        <div><b>{% trans "Progress" %}</b>: {{ milestone.progress }}</div>
     </div>
     <div class="bulk">
-        <h2>#{{ task.id }}: <a href="{{ milestone.get_absolute_url }}">{{ milestone.summary }}</a></h2>
-        <p>{% silk "tag_blue" %} {% task_tags milestone group %}</p>
+        <h2>#{{ milestone.id }}: <a href="{{ milestone.get_absolute_url }}">{{ milestone.summary }}</a></h2>
     </div>
 </div>

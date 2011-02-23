@@ -145,11 +145,6 @@ class MilestoneForm(forms.ModelForm):
     Form for creating milestones
     """
     
-    tags = TagField(
-        required = False,
-        widget = TagAutoCompleteInput(app_label="tasks", model="milestone")
-    )
-    
     def __init__(self, user, group, *args, **kwargs):
         self.user = user
         self.group = group
@@ -183,10 +178,6 @@ class EditMilestoneForm(forms.ModelForm):
         required = False,
         widget = forms.TextInput(attrs={"size": "50", "maxlength": "100"})
     )
-    tags = TagField(
-        required = False,
-        widget = TagAutoCompleteInput(app_label="tasks", model="milestone")
-    )
     
     def __init__(self, user, group, *args, **kwargs):
         self.user = user
@@ -198,13 +189,11 @@ class EditMilestoneForm(forms.ModelForm):
         self.fields.keyOrder = [
             "summary",
             "due",
-            "tags",
         ]
     
     class Meta(TaskForm.Meta):
         fields = [
             "summary",
             "due",
-            "tags",
         ]
 

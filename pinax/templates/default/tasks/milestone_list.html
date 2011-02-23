@@ -6,8 +6,6 @@
 {% load shorttimeuntil_tag %}
 {% load order_by %}
 {% load humanize %}
-{% load tasks_tags %}
-{% load tagging_tags %}
 {% load group_tags %}
 
 {#}{% block head_title %}Milestones for {{ project.name }}{% endblock %}#}
@@ -15,15 +13,14 @@
 
 {% block body %}
     {#<h1>{% trans "Milestones for Project" %} <a href="@@@">{{ group.name }}</a></h1> #}
-    <h1>Milestones</h1>
+    <h1>{% trans "Milestones" %}</h1>
     
     <table class="task_list">{# using the task_list styles here too #}
         <tr>
-            <th>ID</th>
-            <th>Summary</th>
-            <th>Due</th>
-            <th>Tags</th>
-            <th>Progress</th>
+            <th>{% trans "ID" %}</th>
+            <th>{% trans "Summary" %}</th>
+            <th>{% trans "Due" %}</th>
+            <th>{% trans "Progress" %}</th>
         </tr>
         {% for milestone in milestones %}
             <tr class="milestone_{{ milestone.get_state_display }} {% cycle odd,even %}">
@@ -40,8 +37,7 @@
                         {% endif %}
                     {% endif %}
                 </td>
-                <td>{% task_tags milestone group %}</td>
-                <td>{{ milestone.status }}</td>
+                <td>{{ milestone.progress }}</td>
             </tr>
         {% endfor %}
     </table>
