@@ -48,6 +48,7 @@
             ">{% trans "Cancel" %}</a>
         </p>
     </form>
+    
     {% else %}
     {% blocktrans with lock_timestamp|timesince as lock_timestamp %}The page is locked for {{ lock_owner }} since about {{ lock_timestamp }}.{% endblocktrans %}
     {% if allowed_to_reset %}<a href="?reset_lock=true" title="Locked for another {{ lock_ttl|timeuntil }}">{% trans "Reset lock" %}</a>{% endif %}
@@ -69,4 +70,85 @@
     <h2>{% trans "Revisions for this page" %}</h2>
     
     {% include "wakawaka/revision_table.html" %}
+{% endblock %}
+
+{% block extra_body %}
+    <style type="text/css">
+        .wakawaka_button {
+            background: #ddd;
+            border-bottom: solid #999 1px;
+            border-left: 0;
+            border-right: solid #bbb 1px;
+            border-top: solid #999 1px;
+            margin: 0;
+            padding: 2px 4px;
+        }
+        .wakawaka_button:first-child {
+            border-left: solid #999 1px;
+            border-radius: 3px 0 0 3px;
+        }
+        .wakawaka_button:last-child {
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            border-right: solid #999 1px;
+        }
+        .wakawaka_button:hover {
+            background: #bbb;
+        }
+        .wakawaka_button_group {
+            display: inline-block;
+            margin: 3px 3px 0 0;
+        }
+        .wakawaka_button_groups {
+            width: 450px;
+        }
+    </style>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            var mk_grp = function(){ return $('<div class="wakawaka_button_group"></div>'); };
+            var mk_btn = function(short_name, long_name, fn){ return $('<button class="wakawaka_button" id="wakawaka_' + short_name + '">' + long_name + '</button>').click(fn); };
+            var mk_fn = function(fn, require_selection){
+                if (require_selection == null) require_selection = true;
+                return function(){
+                    var ta = $('#id_content');
+                    var ta_val = ta.val();
+                    var ta_start = ta.attr('selectionStart');
+                    var ta_end = ta.attr('selectionEnd');
+                    if (require_selection && ta_start == ta_end) alert('{% trans "Please select some text" %}');
+                    else ta.val(fn(ta_val.substr(0, ta_start), ta_val.substr(ta_start, ta_end - ta_start), ta_val.substr(ta_end)));
+                    return false;
+                };
+            };
+            var add_tag = function(before_out, before_in, tag, after_in, after_out){ return function(before, middle, after){
+                return before + before_out + (tag ? '<' + tag + '>' : '') + before_in + middle + after_in + (tag ? '</' + tag + '>' : '') + after_out + after;
+            }; };
+            $('#id_content').before(
+                $('<div class="wakawaka_button_groups"></div>')
+                    .append(mk_grp()
+                        .append(mk_btn('h1', '1st Headline', mk_fn(add_tag('\n', '', 'h1', '', '\n'))))
+                        .append(mk_btn('h2', '2nd Headline', mk_fn(add_tag('\n', '', 'h2', '', '\n'))))
+                        .append(mk_btn('h3', '3rd Headline', mk_fn(add_tag('\n', '', 'h3', '', '\n')))))
+                    .append(mk_grp()
+                        .append(mk_btn('b', 'Bold', mk_fn(add_tag('', '', 'b', '', ''))))
+                        .append(mk_btn('i', 'Italic', mk_fn(add_tag('', '', 'i', '', ''))))
+                        .append(mk_btn('u', 'Underline', mk_fn(add_tag('', '', 'u', '', '')))))
+                    .append(mk_grp()
+                        .append(mk_btn('ul', 'Unordered List', mk_fn(add_tag('\n', '\n', 'ul', '\n', '\n'))))
+                        .append(mk_btn('ol', 'Ordered List', mk_fn(add_tag('\n', '\n', 'ol', '\n', '\n'))))
+                        .append(mk_btn('li', 'List Item', mk_fn(add_tag('\n', '', 'li', '', '\n')))))
+                    .append(mk_grp()
+                        .append(mk_btn('p', 'Paragraph', mk_fn(add_tag('\n', '\n', 'p', '\n', '\n'))))
+                        .append(mk_btn('br', 'Line Break', mk_fn(add_tag('\n<br /\>\n', '', '', '', ''), false))))
+                    .append(mk_grp()
+                        .append(mk_btn('a', 'External Link', mk_fn(function(b, m, a){
+                            return b + '<a href="' + m + '">' + m + '</a>' + a;
+                        })))
+                        .append(mk_btn('foo', 'Internal Link', mk_fn(function(b, m, a){
+                            return b + m.toLowerCase().replace(/(^|\b)([a-z])/g, function(s, p1, p2){ return p2.toUpperCase(); }).replace(/ /g, '') + a;
+                        }))))
+                    .append(mk_grp()
+                        .append(mk_btn('bar', 'Clear Formatting', mk_fn(function(b, m, a){ return b + m.replace(/\<.*?\>/g, '') + a; }))))
+            );
+        });
+    </script>
 {% endblock %}
