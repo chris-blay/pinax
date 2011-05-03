@@ -174,11 +174,6 @@ class EditMilestoneForm(forms.ModelForm):
     Form for editing milestones
     """
     
-    status = forms.CharField(
-        required = False,
-        widget = forms.TextInput(attrs={"size": "50", "maxlength": "100"})
-    )
-    
     def __init__(self, user, group, *args, **kwargs):
         self.user = user
         self.group = group
