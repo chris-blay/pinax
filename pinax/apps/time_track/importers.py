@@ -26,12 +26,18 @@ class AbstractImporter:
     def get_logged_times(self):
         raise NotImplementedError()
     
-    def _get_project(self, slug):
-        if not slug in self._projects:
+    def _get_project(self, key):
+        if not key in self._projects:
             try:
-                self._projects[slug] = Project.objects.get(slug=slug)
+                # try to get slug first since it's unique and should be used
+                self._projects[key] = Project.objects.get(slug=key)
             except:
-                raise ValueError("Project '%s' not found" % slug)
+                try:
+                    # otherwise try to get name
+                    self._projects[key] = Project.objects.get(name=key)
+                except:
+                    # 
+                    raise ValueError("Project '%s' not found" % key)
         return self._projects[slug]
 
 
@@ -45,7 +51,7 @@ class HamsterTsvImporter(AbstractImporter):
         return [self._logged_time_from_row(row) for row in tsv_reader if row[4] == "Work"]
     
     def _logged_time_from_row(self, row):
-        # 0 -> activity (project slug)
+        # 0 -> activity (project name/slug)
         # 1 -> start_time (parse into date)
         # 2 -> end_time (parse into date)
         # 3 -> duration_minutes (unused)
@@ -71,7 +77,7 @@ class FreshbooksCsvImporter(AbstractImporter):
     def _logged_time_from_row(self, row):
         # 0 -> team (unused)
         # 1 -> date (parse into date)
-        # 2 -> project (project slug)
+        # 2 -> project (project name/slug)
         # 3 -> task (unused)
         # 4 -> notes (summary)
         # 5 -> hours (float of hours)
