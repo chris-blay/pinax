@@ -5,34 +5,28 @@
 {% block body %}
     <h1>Time Overview</h1>
     
-    <h2>Recent Logged Times</h2>
+    <h2>Your Logged Times for <em>{{ group.name }}</em></h2>
     {% if logged_times %}
-        <table>
+        <table class="task_list">
         <thead><tr>
-            <th>Project</th>
             <th>Summary</th>
-            <th>Start</th>
-            <th>Finish</th>
+            <th>Date</th>
             <th>Duration</th>
         </tr></thead>
         <tbody>
         {% for logged_time in logged_times %}
             <tr>
-                <td>{{ logged_time.group.slug }}</td>
                 <td>{{ logged_time.summary }}</td>
-                <td>{{ logged_time.start }}</td>
-                <td>{{ logged_time.finish }}</td>
+                <td>{{ logged_time.start.date }}</td>
                 <td>{{ logged_time.duration }}</td>
             </tr>
         {% endfor %}
+        <tr style="border-top:solid #9BC 1px;">
+            <td colspan="2">&nbsp;</td>
+            <td>{{ total_duration }}</td>
+        </tr>
         </tbody></table>
     {% else %}
         Nothing here...
     {% endif %}
-{% endblock %}
-
-{% block extra_body %}
-    <script type="text/javascript">
-        // TODO
-    </script>
 {% endblock %}

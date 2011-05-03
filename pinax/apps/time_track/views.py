@@ -20,7 +20,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 
 from pinax.apps.time_track.models import LoggedTime
-from pinax.apps.time_track.forms import LoggedTimeForm, EditLoggedTimeForm, UploadLoggedTimeForm
+from pinax.apps.time_track.forms import LoggedTimeForm, EditLoggedTimeForm
+from pinax.apps.time_track.forms import UploadLoggedTimeForm, ReportParamsForm
 from pinax.apps.time_track.importers import HamsterTsvImporter, FreshbooksCsvImporter
 
 
@@ -57,17 +58,22 @@ def overview(request, template_name="time_track/overview.html"):
     if group:
         is_member = group.request.user_is_member()
     else:
-        is_member = True
+        is_member = False
     
     if group:
-        logged_times = group.content_objects(LoggedTime)
+        logged_times = group.content_objects(LoggedTime).filter(owner=request.user)
     else:
-        logged_times = LoggedTime.objects.filter(object_id=None)
+        logged_times = LoggedTime.objects.filter(owner=request.user)
+    
+    total_duration = timedelta()
+    for logged_time in logged_times:
+        total_duration += logged_time.duration()
     
     ctx = group_context(group, bridge)
     ctx.update({
         "is_member": is_member,
         "logged_times": logged_times,
+        "total_duration": total_duration,
     })
     
     return render_to_response(template_name, RequestContext(request, ctx))
@@ -81,30 +87,29 @@ def upload(request, form_class=UploadLoggedTimeForm, template_name="time_track/u
     else:
         is_member = False
     
-    if request.method == "POST":
-        if request.user.is_authenticated() and is_member:
-            upload_time_form = form_class(request.POST, request.FILES)
-            if upload_time_form.is_valid():
-                uploaded_file = upload_time_form.cleaned_data['file_input']
-                file_type = upload_time_form.cleaned_data['file_type']
-                importer = globals()[file_type](uploaded_file, request.user)
-                try:
-                    logged_times = importer.get_logged_times()
-                    for logged_time in logged_times:
-                        logged_time.save()
-                    if request.POST.has_key("upload-more-time"):
-                        if group:
-                            redirect_to = bridge.reverse("time_track_upload", group)
-                        else:
-                            redirect_to = reverse("time_track_upload")
-                        return HttpResponseRedirect(redirect_to)
+    if request.method == "POST" and request.user.is_authenticated() and is_member:
+        upload_time_form = form_class(request.POST, request.FILES)
+        if upload_time_form.is_valid():
+            uploaded_file = upload_time_form.cleaned_data['file_input']
+            file_type = upload_time_form.cleaned_data['file_type']
+            importer = globals()[file_type](uploaded_file, request.user)
+            try:
+                logged_times = importer.get_logged_times()
+                for logged_time in logged_times:
+                    logged_time.save()
+                if request.POST.has_key("upload-more-time"):
                     if group:
-                        redirect_to = bridge.reverse("time_track_overview", group)
+                        redirect_to = bridge.reverse("time_track_upload", group)
                     else:
-                        redirect_to = reverse("time_track_overview")
+                        redirect_to = reverse("time_track_upload")
                     return HttpResponseRedirect(redirect_to)
-                except ValueError, ex:
-                    upload_time_form.add_file_input_error(ex)
+                if group:
+                    redirect_to = bridge.reverse("time_track_overview", group)
+                else:
+                    redirect_to = reverse("time_track_overview")
+                return HttpResponseRedirect(redirect_to)
+            except ValueError, ex:
+                upload_time_form.add_file_input_error(ex)
     else:
         upload_time_form = form_class()
     
@@ -117,18 +122,36 @@ def upload(request, form_class=UploadLoggedTimeForm, template_name="time_track/u
     return render_to_response(template_name, RequestContext(request, ctx))
 
 
-def report(request, template_name="time_track/report.html"):
+def report(request, form_class=ReportParamsForm, template_name="time_track/report.html"):
     
     group, bridge = group_and_bridge(request)
     if group:
         is_member = group.request.user_is_member()
     else:
-        is_member = True
+        is_member = False
+    
+    total_duration = timedelta()
+    logged_times = tuple()
+    if request.method == "POST" and request.user.is_authenticated() and is_member:
+        report_params_form = form_class(request.POST)
+        if report_params_form.is_valid():
+            if group:
+                start = report_params_form.cleaned_data['start']
+                finish = report_params_form.cleaned_data['finish']
+                logged_times = group.content_objects(LoggedTime).filter(start__gte=start, finish__lte=finish)
+            else:
+                logged_times = LoggedTime.objects # TODO
+            for logged_time in logged_times:
+                total_duration += logged_time.duration()
+    else:
+        report_params_form = form_class()
     
     ctx = group_context(group, bridge)
     ctx.update({
         "is_member": is_member,
-        "querystring": request.GET.urlencode(),
+        "report_params_form": report_params_form,
+        "logged_times": logged_times,
+        "total_duration": total_duration,
     })
     
     return render_to_response(template_name, RequestContext(request, ctx))

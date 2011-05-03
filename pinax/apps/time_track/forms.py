@@ -73,6 +73,14 @@ class EditLoggedTimeForm(forms.ModelForm):
             "finish"
         ]
 
+class ReportParamsForm(forms.Form):
+    """
+    Form for selecting which time frame to view logged times for
+    """
+    
+    start = forms.DateField(help_text="Inclusive")
+    finish = forms.DateField(help_text="Exclusive")
+
 class UploadLoggedTimeForm(forms.Form):
     """
     Form for uploading and importing a file of logged times

@@ -1,15 +1,55 @@
 {% extends "time_track/base.html" %}
 
-{% block head_title %}Time Report{% endblock %}
+{% load i18n %}
+{% load uni_form_tags %}
+
+{% block head_title %}Time Overview{% endblock %}
 
 {% block body %}
-    <h1>Time Report</h1>
+    <h1>Time Overview</h1>
     
-    TODO
+    {% if is_member %}
+        <form method="POST" action="" id="report_params_form" class="uniForm">
+            {% csrf_token %}
+            <div class="form_block">
+                {{ report_params_form|as_uni_form }}
+                <input type="submit" value="{% trans 'Generate Report' %}"/>
+            </div>
+        </form>
+        
+        {% if logged_times %}
+        <h2>Logged Time Report for <em>{{ group.name }}</em></h2>
+            <table class="task_list">
+            <thead><tr>
+                <th>Owner</th>
+                <th>Summary</th>
+                <th>Date</th>
+                <th>Duration</th>
+            </tr></thead>
+            <tbody>
+            {% for logged_time in logged_times %}
+                <tr>
+                    <td>{{ logged_time.owner }}</td>
+                    <td>{{ logged_time.summary }}</td>
+                    <td>{{ logged_time.start.date }}</td>
+                    <td>{{ logged_time.duration }}</td>
+                </tr>
+            {% endfor %}
+            <tr style="border-top:solid #9BC 1px;">
+                <td colspan="2">&nbsp;</td>
+                <td>{{ total_duration }}</td>
+            </tr>
+            </tbody></table>
+        {% endif %}
+        
+    {% else %}
+        You are not a member of this project
+    {% endif %}
 {% endblock %}
 
 {% block extra_body %}
-    <script type="text/javascript">
-        // TODO
-    </script>
+    <script type="text/javascript">//<!--
+        $('#id_start').datepicker();
+        $('#id_finish').datepicker();
+    //--></script>
 {% endblock %}
