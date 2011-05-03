@@ -1,5 +1,6 @@
+import csv
 from datetime import datetime
-import re
+
 
 from pinax.apps.projects.models import Project
 from pinax.apps.time_track.models import LoggedTime
@@ -16,46 +17,68 @@ importer_choices = (
 
 class AbstractImporter:
     
-    projects = {}
+    _projects = {}
     
     def __init__(self, uploaded_file, user):
-        self.file_contents = uploaded_file.read()
+        self.uploaded_file = uploaded_file
         self.user = user
     
     def get_logged_times(self):
         raise NotImplementedError()
     
     def _get_project(self, slug):
-        if not slug in self.projects:
-            self.projects[slug] = Project.objects.filter(slug=slug)
-        if self.projects[slug]:
-            return self.projects[slug][0]
-        return None
+        if not slug in self._projects:
+            try:
+                self._projects[slug] = Project.objects.get(slug=slug)
+            except:
+                raise ValueError("Project '%s' not found" % slug)
+        return self._projects[slug]
 
 
 class HamsterTsvImporter(AbstractImporter):
     
+    format = "%Y-%m-%d %H:%M:%S"
+    
     def get_logged_times(self):
-        logged_times = []
-        skip_one = True
-        for match in re.finditer(r"(?P<activity>.*?)\t(?P<start_time>.*?)\t(?P<end_time>.*?)\t(?P<duration_minutes>.*?)\t(?P<category>.*?)\t(?P<description>.*?)\t.*?\n?\r?", self.file_contents):
-            if skip_one:
-                skip_one = False
-                continue
-            activity = match.group('activity')
-            project = self._get_project(activity)
-            if not project:
-                raise ValueError("Project '%s' not found" % activity)
-            # TODO optionally get this from the settings
-            format = "%Y-%m-%d %H:%M:%S"
-            start = datetime.strptime(match.group('start_time'), format)
-            finish = datetime.strptime(match.group('end_time'), format)
-            logged_times.append(LoggedTime(group=project, summary=match.group('description'), owner=self.user, start=start, finish=finish))
-        if not logged_times:
-            raise ValueError("No logged times found")
-        return logged_times
+        tsv_reader = csv.reader(self.uploaded_file, delimiter="\t")
+        tsv_reader.next() # to skip the header row
+        return [self._logged_time_from_row(row) for row in tsv_reader if row[4] == "Work"]
+    
+    def _logged_time_from_row(self, row):
+        # 0 -> activity (project slug)
+        # 1 -> start_time (parse into date)
+        # 2 -> end_time (parse into date)
+        # 3 -> duration_minutes (unused)
+        # 4 -> category (must be 'Work')
+        # 5 -> description (summary)
+        # 6 -> tags (unused)
+        project = self._get_project(row[0])
+        start = datetime.strptime(row[1], self.format)
+        finish = datetime.strptime(row[2], self.format)
+        return LoggedTime(group=project, summary=row[5],
+                    owner=self.user, start=start, finish=finish)
 
 
 class FreshbooksCsvImporter(AbstractImporter):
     
-    pass # TODO
+    format = "%m/%d/%y"
+    
+    def get_logged_times(self):
+        csv_reader = csv.reader(self.uploaded_file)
+        csv_reader.next() # to skip the header row
+        return [self._logged_time_from_row(row) for row in csv_reader]
+    
+    def _logged_time_from_row(self, row):
+        # 0 -> team (unused)
+        # 1 -> date (parse into date)
+        # 2 -> project (project slug)
+        # 3 -> task (summary)
+        # 4 -> notes (unused)
+        # 5 -> hours (float of hours)
+        # 6 -> billed (unused)
+        project = self._get_project(row[2])
+        start = datetime.strptime(row[1], self.format)
+        finish = start + timedelta(hours=float(row[5]))
+        return LoggedTime(group=project, summary=row[3],
+                    owner=self.user, start=start, finish=finish)
+
