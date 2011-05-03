@@ -1,0 +1,18 @@
+{% extends group_base|default:"site_base.html" %}
+
+{% load i18n %}
+{% load group_tags %}
+
+{% block body_class %}time_track{% endblock %}
+
+{% block subnav %}
+    {% if user.is_authenticated %}
+        <ul>
+            <li><a href="{% groupurl time_track_overview group %}">{% trans "Time Overview" %}</a></li>
+            <li><a href="{% groupurl time_track_upload group %}">{% trans "Upload Time" %}</a></li>
+            <li><a href="{% groupurl time_track_report group %}">{% trans "Time Report" %}</a></li>
+        </ul>
+    {% else %}
+        &nbsp;
+    {% endif %}
+{% endblock %}

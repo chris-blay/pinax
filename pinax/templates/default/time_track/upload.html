@@ -1,0 +1,36 @@
+{% extends "time_track/base.html" %}
+
+{% load i18n %}
+{% load uni_form_tags %}
+{% load group_tags %}
+
+{% block head_title %}Upload Time{% endblock %}
+
+{% block body %}
+    <h1>Upload Time</h1>
+
+    {% if is_member %}
+
+        <div class="main-form">
+            <form enctype="multipart/form-data" method="POST" action="" id="upload_time_form" class="uniForm">
+                {% csrf_token %}
+                <div class="form_block">
+                    {{ upload_time_form|as_uni_form }}
+                    <input type="submit" value="{% trans 'Upload time' %}"/>
+                    <input type="submit" name="upload-more-time" value="{% trans 'Upload time and upload another' %}"/>
+                </div>
+            </form>
+        </div>
+
+
+    {% else %}
+        <p>{% trans 'You are not a member and so cannot upload time.' %}</p>
+    {% endif %}
+
+{% endblock %}
+
+{% block extra_body %}
+    <script type="text/javascript">
+        // TODO
+    </script>
+{% endblock %}

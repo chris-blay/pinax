@@ -1,0 +1,38 @@
+{% extends "time_track/base.html" %}
+
+{% block head_title %}Time Overview{% endblock %}
+
+{% block body %}
+    <h1>Time Overview</h1>
+    
+    <h2>Recent Logged Times</h2>
+    {% if logged_times %}
+        <table>
+        <thead><tr>
+            <th>Project</th>
+            <th>Summary</th>
+            <th>Start</th>
+            <th>Finish</th>
+            <th>Duration</th>
+        </tr></thead>
+        <tbody>
+        {% for logged_time in logged_times %}
+            <tr>
+                <td>{{ logged_time.group.slug }}</td>
+                <td>{{ logged_time.summary }}</td>
+                <td>{{ logged_time.start }}</td>
+                <td>{{ logged_time.finish }}</td>
+                <td>{{ logged_time.duration }}</td>
+            </tr>
+        {% endfor %}
+        </tbody></table>
+    {% else %}
+        Nothing here...
+    {% endif %}
+{% endblock %}
+
+{% block extra_body %}
+    <script type="text/javascript">
+        // TODO
+    </script>
+{% endblock %}
