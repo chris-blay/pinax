@@ -38,7 +38,7 @@ class AbstractImporter:
                 except:
                     # 
                     raise ValueError("Project '%s' not found" % key)
-        return self._projects[slug]
+        return self._projects[key]
 
 
 class HamsterTsvImporter(AbstractImporter):
