@@ -72,13 +72,13 @@ class FreshbooksCsvImporter(AbstractImporter):
         # 0 -> team (unused)
         # 1 -> date (parse into date)
         # 2 -> project (project slug)
-        # 3 -> task (summary)
-        # 4 -> notes (unused)
+        # 3 -> task (unused)
+        # 4 -> notes (summary)
         # 5 -> hours (float of hours)
         # 6 -> billed (unused)
         project = self._get_project(row[2])
         start = datetime.strptime(row[1], self.format)
         finish = start + timedelta(hours=float(row[5]))
-        return LoggedTime(group=project, summary=row[3],
+        return LoggedTime(group=project, summary=row[4],
                     owner=self.user, start=start, finish=finish)
 
